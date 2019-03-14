@@ -13,6 +13,8 @@ from .button import button
 
 from .create_ticket import create_issue
 
+quick_jira_bkup_path = '/tmp/.quickjira'
+
 def get_config(path):
     with open(path, 'r') as fp:
         config = yaml.load(fp.read())
@@ -127,27 +129,12 @@ def main(stdscr, config):
         for _, (label, widget) in enumerate(widgets):
             states[label] = widget.get_state()
 
-        with open('/tmp/.quickjira', 'w') as fp:
+        with open(quick_jira_bkup_path, 'w') as fp:
             fp.write(json.dumps(states))
-
         raise
+    else:
+        os.unlink(quick_jira_bkup_path)
 
 def run():
     config = get_config(os.path.expanduser('~/.quickjira'))
-
-    print('start')
     curses.wrapper(main, config)
-    print('done')
-    #stdscr = curses.initscr()
-    #try:
-    #    curses.noecho()
-    #    curses.cbreak()
-    #    stdscr.keypad(True)
-    #    run2()
-    #finally:
-    #    curses.nocbreak()
-    #    stdscr.keypad(False)
-    #    curses.echo()
-    #    curses.endwin()
-
-
