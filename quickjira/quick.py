@@ -28,6 +28,20 @@ def get_config(path):
 
     return config
 
+def determine_widget_heights(widgets, max_height):
+    num_variable = sum(1 for (_, _, height) in widgets if height == '*')
+    known_height = sum(height for (_, _, height) in widgets if height != '*')
+    var_height = None
+    if num_variable > 0:
+        var_height = (max_height - known_height) // num_variable
+    heights = []
+    for (_, _, height) in widgets:
+        if height == '*':
+            height = var_height
+        heights.append(height)
+    return heights
+
+
 def main(stdscr, config):
 
     new_ticket_key = {
@@ -63,19 +77,19 @@ def main(stdscr, config):
 
     active_widget = 0
     widgets = [
-            ('       summary: ', text()),
-            ('estimated days: ', text()),
-            (' active sprint: ', toggle(('Y', 'N'), initial_index=1)),
-            ('  assign to me: ', toggle(('Y', 'N'), initial_index=1)),
-            ('   description: ', textarea()),
-            ('                ', button('<submit ticket>', on_submit)),
+            ('       summary: ', text(), 1),
+            ('estimated days: ', text(), 1),
+            (' active sprint: ', toggle(('Y', 'N'), initial_index=1), 1),
+            ('  assign to me: ', toggle(('Y', 'N'), initial_index=1), 1),
+            ('   description: ', textarea(), '*'),
+            ('                ', button('<submit ticket>', on_submit), 1),
             ]
 
     # attempt restore
     with suppress(Exception):
         with open('/tmp/.quickjira', 'r') as fp:
             states = json.loads(fp.read())
-        for label, widget in widgets:
+        for label, widget, _ in widgets:
             if label in states:
                 widget.load_state(states[label])
 
@@ -86,12 +100,14 @@ def main(stdscr, config):
         while(keep_running()):
             stdscr.clear()
             height,width = stdscr.getmaxyx()
+            heights = determine_widget_heights(widgets, height)
 
             cursor_loc = None
             y = 0
-            for i, (label, widget) in enumerate(widgets):
+            for i, (label, widget, _) in enumerate(widgets):
                 n = len(label)
-                widget.max_width = width - n - 1 # leave an extra empty space for the cursor
+                widget.width = width - n - 1 # leave an extra empty space for the cursor
+                widget.height = heights[i] # leave an extra empty space for the cursor
                 selected = bool(active_widget == i)
 
                 stdscr.addstr(y, 0, f'{label}')
@@ -126,7 +142,7 @@ def main(stdscr, config):
             widgets[active_widget][1].handle_key(key)
     except:
         states = {}
-        for _, (label, widget) in enumerate(widgets):
+        for _, (label, widget, _) in enumerate(widgets):
             states[label] = widget.get_state()
 
         with open(quick_jira_bkup_path, 'w') as fp:

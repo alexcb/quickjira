@@ -5,7 +5,8 @@ class text(object):
         self.t = []
         self.cursor = 0
         self.cursor_relative = 0
-        self.height = 1
+        self.height = None
+        self.width = None
 
     def get_state(self):
         return ''.join(self.t)
@@ -31,20 +32,24 @@ class text(object):
         elif key == 'KEY_RIGHT':
             if self.cursor < len(self.t):
                 self.cursor += 1
+        elif key == 'KEY_HOME':
+            self.cursor = 0
+        elif key == 'KEY_END':
+            self.cursor = len(self.t)
         else:
             if len(key) == 1:
                 self.t = self.t[:self.cursor] + [key] + self.t[self.cursor:]
                 self.cursor += 1
 
     def text(self):
-        if len(self.t) <= self.max_width:
+        if len(self.t) <= self.width:
             self.cursor_relative = self.cursor
             return ''.join(self.t)
 
-        j = max(self.cursor, self.max_width)
-        i = j - self.max_width
+        j = max(self.cursor, self.width)
+        i = j - self.width
         s = ''.join(self.t[i:j])
-        assert( len(s) == self.max_width)
+        assert( len(s) == self.width)
         self.cursor_relative = self.cursor-i
         return s
 
